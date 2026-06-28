@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Seleksi Bansos RT/RW — Metode SAW</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Segoe UI", Arial, sans-serif; background: #f0f2f5; color: #111; min-height: 100vh; }
+.topbar { background: #1e4d8c; color: #fff; padding: 14px 24px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.topbar-ic { width: 36px; height: 36px; background: rgba(255,255,255,.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.topbar-ic svg { fill: #fff; width: 20px; height: 20px; }
+.topbar h1 { font-size: 16px; font-weight: 600; }
+.topbar p { font-size: 11px; opacity: .75; margin-top: 1px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 16px; }
+.tabs { display: flex; gap: 2px; background: #fff; border-radius: 10px; padding: 6px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); flex-wrap: wrap; }
+.tab { flex: 1; min-width: 90px; padding: 8px 10px; font-size: 12px; font-weight: 500; border: none; background: none; cursor: pointer; color: #666; border-radius: 7px; transition: all .15s; text-align: center; }
+.tab.active { background: #1e4d8c; color: #fff; }
+.tab:hover:not(.active) { background: #f0f2f5; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+.card-title { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.fg { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 10px; margin-bottom: 12px; }
+.fld { display: flex; flex-direction: column; gap: 4px; }
+.fld label { font-size: 11px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.fld input, .fld select { padding: 8px 10px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; background: #fff; color: #111; outline: none; transition: border .15s; }
+.fld input:focus, .fld select:focus { border-color: #1e4d8c; box-shadow: 0 0 0 3px rgba(30,77,140,.1); }
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; white-space: nowrap; }
+.btn-p { background: #1e4d8c; color: #fff; }
+.btn-p:hover { background: #163d73; }
+.btn-o { background: #fff; color: #1e4d8c; border: 1.5px solid #1e4d8c; }
+.btn-o:hover { background: #e6f1fb; }
+.btn-g { background: #0f6e56; color: #fff; }
+.btn-g:hover { background: #085041; }
+.btn-w { background: #854f0b; color: #fff; }
+.btn-w:hover { background: #633806; }
+.btn-r { background: #a32d2d; color: #fff; }
+.btn-r:hover { background: #821f1f; }
+.btn-r2 { background: #fff; color: #a32d2d; border: 1.5px solid #a32d2d; font-size: 12px; padding: 4px 10px; }
+.btn-r2:hover { background: #fcebeb; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+.sg { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 10px; margin-bottom: 16px; }
+.sc { background: #fff; border-radius: 10px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+.sc .lb { font-size: 11px; color: #666; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.sc .vl { font-size: 26px; font-weight: 700; }
+.sc .sb { font-size: 11px; color: #888; margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: #f5f7fa; }
+th { padding: 9px 10px; text-align: left; font-weight: 600; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: .4px; border-bottom: 1.5px solid #e8e8e8; }
+td { padding: 9px 10px; border-bottom: 1px solid #f0f0f0; color: #111; vertical-align: middle; }
+tr:hover td { background: #f0f6ff; }
+.bdg { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.bdg-pr { background: #faeeda; color: #854f0b; }
+.bdg-ly { background: #e1f5ee; color: #0f6e56; }
+.bdg-tl { background: #fcebeb; color: #a32d2d; }
+.empty { text-align: center; padding: 2.5rem; color: #aaa; font-size: 13px; }
+.alrt { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; }
+.alrt-ok { background: #e1f5ee; color: #0f6e56; border: 1px solid #9fe1cb; }
+.alrt-inf { background: #e6f1fb; color: #1e4d8c; border: 1px solid #b5d4f4; }
+.alrt-err { background: #fcebeb; color: #a32d2d; border: 1px solid #f7c1c1; }
+.rn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700; background: #e6f1fb; color: #1e4d8c; }
+.rn.top { background: #faeeda; color: #854f0b; }
+.sbw { display: flex; align-items: center; gap: 6px; }
+.sbar { height: 6px; border-radius: 3px; background: #1e4d8c; }
+.drop-zone { border: 2px dashed #ccc; border-radius: 10px; padding: 2rem; text-align: center; cursor: pointer; transition: all .2s; color: #888; font-size: 13px; }
+.drop-zone:hover, .drop-zone.drag { border-color: #1e4d8c; background: #e6f1fb; color: #1e4d8c; }
+.drop-arrow { font-size: 32px; margin-bottom: 8px; display: block; }
+.ch-wrap { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 12px; margin-bottom: 12px; }
+.info-box { background: #f5f7fa; border-radius: 8px; padding: 14px; font-size: 13px; color: #555; line-height: 1.8; margin-bottom: 12px; }
+.info-box strong { color: #111; }
+.tbl-wrap { overflow-x: auto; }
+.badge-cost { background: #fff0f0; color: #a32d2d; border: 1px solid #f7c1c1; font-size: 10px; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 4px; }
+.badge-ben { background: #e6f1fb; color: #1e4d8c; border: 1px solid #b5d4f4; font-size: 10px; padding: 1px 5px; border-radius: 4px; font-weight: 700; margin-left: 4px; }
+
+/* ===== BOBOT EDITOR ===== */
+.bobot-editor { border: 1.5px solid #e0e0e0; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+.bobot-row { display: grid; grid-template-columns: 2fr 100px 110px 80px 80px; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+.bobot-row:last-child { border-bottom: none; }
+.bobot-row.header { background: #f5f7fa; font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: .4px; padding: 8px 14px; }
+.bobot-row input[type=number] { width: 70px; padding: 5px 8px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 12px; }
+.bobot-row select { padding: 5px 8px; border: 1.5px solid #e0e0e0; border-radius: 6px; font-size: 12px; }
+.bobot-total { padding: 10px 14px; background: #f5f7fa; font-size: 13px; font-weight: 600; border-top: 1.5px solid #e0e0e0; display: flex; align-items: center; gap: 10px; }
+.bobot-total .tot-val { font-size: 20px; font-weight: 700; }
+.tot-ok { color: #0f6e56; }
+.tot-err { color: #a32d2d; }
+
+/* ===== TAMBAH KRITERIA ===== */
+.add-kriteria { background: #f0f6ff; border: 1.5px dashed #1e4d8c; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.add-kriteria .fg { margin-bottom: 0; }
+
+/* ===== LANGKAH PERHITUNGAN ===== */
+.step-box { border: 1px solid #e8e8e8; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.step-header { background: #f5f7fa; padding: 12px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+.step-header:hover { background: #e6f1fb; }
+.step-body { padding: 16px; display: none; overflow-x: auto; }
+.step-body.open { display: block; }
+.step-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.step-table th { background: #1e4d8c; color: #fff; padding: 7px 10px; text-align: center; font-size: 11px; font-weight: 600; }
+.step-table td { padding: 6px 10px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+.step-table tr:last-child td { border-bottom: none; }
+.step-table .nm-col { text-align: left; font-weight: 600; }
+.step-table .max-row td { background: #e6f1fb; font-weight: 700; }
+.step-table .min-row td { background: #e1f5ee; font-weight: 700; }
+.formula-box { background: #1e4d8c; color: #fff; border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 12px; font-family: monospace; }
+.hl-cost { color: #F09595; font-weight: 700; }
+.hl-ben { color: #5DCAA5; font-weight: 700; }
+.step-body .info-box { margin-bottom: 8px; }
+
+@media (max-width: 700px) {
+  .bobot-row { grid-template-columns: 1fr 80px 90px 60px 50px; font-size: 12px; }
+  .topbar h1 { font-size: 14px; }
+  .wrap { padding: 12px 8px; }
+  .tab { font-size: 11px; padding: 7px 4px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-ic">
+    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+  </div>
+  <div>
+    <h1>Sistem Seleksi Penerima Bansos RT/RW</h1>
+    <p>Metode Simple Additive Weighting (SAW) &bull; Database Lokal (IndexedDB)</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="sw('input')">&#9998; Input Data</button>
+    <button class="tab" onclick="sw('import')">&#8679; Import Excel</button>
+    <button class="tab" onclick="sw('hasil')">&#9733; Hasil &amp; Peringkat</button>
+    <button class="tab" onclick="sw('hitung')">&#8721; Langkah SAW</button>
+    <button class="tab" onclick="sw('dashboard')">&#9782; Dashboard</button>
+    <button class="tab" onclick="sw('bobot')">&#9878; Bobot &amp; Kriteria</button>
+  </div>
+
+  <!-- ===== INPUT ===== -->
+  <div id="panel-input" class="panel active">
+    <div id="alrt" style="display:none"></div>
+    <div class="card">
+      <div class="card-title">
+        <span>Form Data Warga</span>
+        <span id="fml" style="font-size:12px;color:#888;font-weight:400"></span>
+      </div>
+      <div class="fg">
+        <div class="fld"><label>Nama Lengkap *</label><input id="f-nm" placeholder="Budi Santoso"></div>
+        <div class="fld"><label>RT</label><input id="f-rt" placeholder="01"></div>
+        <div class="fld"><label>RW</label><input id="f-rw" placeholder="003"></div>
+        <div class="fld"><label>NIK</label><input id="f-nik" placeholder="3271xxxxxxxxxxxxxxxx" maxlength="16"></div>
+      </div>
+      <div id="form-kriteria-fields" class="fg"></div>
+      <input type="hidden" id="f-eid">
+      <div class="btn-row">
+        <button class="btn btn-p" onclick="save()">&#10003; Simpan Data</button>
+        <button class="btn btn-o" onclick="resetF()">&#8635; Reset Form</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Daftar Warga Terdaftar</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input id="srch" placeholder="&#128269; Cari nama..." style="padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:12px;outline:none" oninput="renderTbl()">
+          <button class="btn btn-g" onclick="expRaw()">&#8659; Export Excel</button>
+          <button class="btn btn-o" onclick="printLap()">&#128438; Cetak Laporan</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr id="th-raw"></tr></thead>
+        <tbody id="tb-raw"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ===== IMPORT ===== -->
+  <div id="panel-import" class="panel">
+    <div id="alrt-imp" style="display:none"></div>
+    <div class="card">
+      <div class="card-title">Import dari File Excel</div>
+      <div class="info-box">
+        <strong>Format kolom Excel:</strong> Nama &bull; RT &bull; RW &bull; NIK &bull; lalu kolom per kriteria (sesuai nama kriteria yang aktif).<br>
+        Nilai kolom kriteria bisa berupa <strong>teks label pilihan</strong> atau <strong>angka Likert (1–max skala)</strong>.<br><br>
+        ⚠️ Nama kolom harus sama persis dengan nama kriteria yang dikonfigurasi di tab <strong>Bobot &amp; Kriteria</strong>.
+      </div>
+      <div class="drop-zone" id="dz" onclick="document.getElementById('filex').click()" ondragover="dg(event)" ondragleave="dl(event)" ondrop="dd(event)">
+        <span class="drop-arrow">&#8679;</span>
+        Klik atau seret file Excel (.xlsx / .xls / .csv) ke sini
+      </div>
+      <input type="file" id="filex" accept=".xlsx,.xls,.csv" style="display:none" onchange="impFile(this)">
+    </div>
+    <div class="card">
+      <div class="card-title">Download Template Excel</div>
+      <p style="font-size:13px;color:#666;margin-bottom:12px">Template otomatis menggunakan kriteria yang aktif saat ini.</p>
+      <button class="btn btn-o" onclick="dlTemplate()">&#8659; Download template.xlsx</button>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:#A32D2D">&#9888; Zona Bahaya</div>
+      <p style="font-size:13px;color:#666;margin-bottom:12px">Hapus seluruh data dari database lokal. Tidak bisa dibatalkan.</p>
+      <button class="btn btn-r2" onclick="clearAll()">&#128465; Hapus Semua Data</button>
+    </div>
+  </div>
+
+  <!-- ===== HASIL ===== -->
+  <div id="panel-hasil" class="panel">
+    <div class="sg" id="sg"></div>
+    <div class="card">
+      <div class="card-title">
+        <span>Peringkat Penerima Bansos (Metode SAW)</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="fl-st" onchange="renderHasil()" style="padding:6px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:12px;outline:none">
+            <option value="">Semua status</option>
+            <option value="Prioritas">Prioritas</option>
+            <option value="Layak">Layak</option>
+            <option value="Tidak Layak">Tidak Layak</option>
+          </select>
+          <input id="fl-rt" placeholder="Filter RT" style="padding:6px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:12px;width:80px;outline:none" oninput="renderHasil()">
+          <button class="btn btn-g" onclick="expHasil()">&#8659; Export Hasil</button>
+        </div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>#</th><th>Nama</th><th>RT/RW</th><th>NIK</th><th>Skor SAW</th><th>Status</th><th>Rincian Skor</th></tr></thead>
+        <tbody id="tb-hasil"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ===== LANGKAH SAW ===== -->
+  <div id="panel-hitung" class="panel">
+    <div class="card">
+      <div class="card-title">Langkah-Langkah Perhitungan SAW</div>
+      <div class="info-box">
+        Berikut rincian perhitungan SAW secara transparan dari data yang tersimpan. Semua angka dihitung real-time.
+      </div>
+      <div id="step-content"></div>
+    </div>
+  </div>
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="panel-dashboard" class="panel">
+    <div class="sg" id="sg2"></div>
+    <div class="ch-wrap">
+      <div class="card"><p style="font-size:12px;font-weight:600;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">Distribusi Status</p><canvas id="ch-pie"></canvas></div>
+      <div class="card"><p style="font-size:12px;font-weight:600;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">Top 10 Skor SAW</p><canvas id="ch-bar"></canvas></div>
+    </div>
+    <div class="card"><p style="font-size:12px;font-weight:600;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">Distribusi Status per RT</p><canvas id="ch-rt"></canvas></div>
+    <div class="card"><p style="font-size:12px;font-weight:600;color:#666;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">Distribusi Skor SAW (semua warga)</p><canvas id="ch-skor"></canvas></div>
+  </div>
+
+  <!-- ===== BOBOT & KRITERIA ===== -->
+  <div id="panel-bobot" class="panel">
+    <div id="alrt-bobot" style="display:none"></div>
+
+    <!-- Tambah Kriteria Baru -->
+    <div class="card">
+      <div class="card-title">&#10010; Tambah Kriteria Baru</div>
+      <div class="add-kriteria">
+        <div class="fg">
+          <div class="fld"><label>Nama Kriteria</label><input id="nk-nm" placeholder="Contoh: Usia KK"></div>
+          <div class="fld">
+            <label>Tipe</label>
+            <select id="nk-tp">
+              <option value="benefit">BENEFIT (semakin besar = lebih baik)</option>
+              <option value="cost">COST (semakin kecil = lebih baik)</option>
+            </select>
+          </div>
+          <div class="fld"><label>Bobot (0–1)</label><input id="nk-bw" type="number" step="0.01" min="0.01" max="1" placeholder="0.10"></div>
+          <div class="fld"><label>Jumlah Skala (2–10)</label><input id="nk-sk" type="number" min="2" max="10" value="5" placeholder="5"></div>
+        </div>
+        <div id="nk-labels-wrap" style="margin-top:10px"></div>
+        <div class="btn-row">
+          <button class="btn btn-p" onclick="addKriteria()">&#10010; Tambah Kriteria</button>
+        </div>
+      </div>
+      <p style="font-size:11px;color:#888;margin-top:8px">💡 Jumlah skala menentukan berapa pilihan Likert (misal 5 = pilihan 1 s/d 5). Label opsional — jika dikosongkan akan terisi otomatis.</p>
+    </div>
+
+    <!-- Editor Bobot & Tipe -->
+    <div class="card">
+      <div class="card-title">
+        <span>Bobot &amp; Tipe Kriteria</span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span id="tot-bobot-disp" style="font-size:13px"></span>
+          <button class="btn btn-p btn-sm" onclick="saveBobot()">&#10003; Simpan Perubahan</button>
+        </div>
+      </div>
+      <div class="bobot-editor">
+        <div class="bobot-row header">
+          <span>Kriteria</span>
+          <span>Bobot (0–1)</span>
+          <span>Tipe</span>
+          <span>Skala</span>
+          <span>Aksi</span>
+        </div>
+        <div id="bobot-rows"></div>
+      </div>
+      <div class="bobot-total">
+        <span>Total Bobot:</span>
+        <span id="tot-bobot" class="tot-val tot-ok">0.00</span>
+        <span style="font-size:12px;color:#888">(harus = 1.00)</span>
+      </div>
+      <div style="margin-top:12px">
+        <div class="info-box" style="margin-bottom:0">
+          <strong>Normalisasi Otomatis:</strong>
+          <button class="btn btn-o btn-sm" onclick="autoNorm()" style="margin-left:8px">&#9878; Normalisasi Bobot ke 1.00</button>
+          &nbsp;— Membagi ulang bobot agar totalnya persis 1.
+        </div>
+      </div>
+    </div>
+
+    <!-- Penjelasan -->
+    <div class="card">
+      <div class="card-title">Cara Kerja Metode SAW</div>
+      <div class="info-box" style="line-height:2">
+        1. <strong>Normalisasi Benefit:</strong> r<sub>ij</sub> = x<sub>ij</sub> / MAX(x<sub>j</sub>) — semakin besar nilai, semakin baik<br>
+        2. <strong>Normalisasi Cost:</strong> r<sub>ij</sub> = MIN(x<sub>j</sub>) / x<sub>ij</sub> — semakin kecil nilai, semakin baik<br>
+        3. <strong>Pembobotan:</strong> v<sub>i</sub> = &Sigma;(w<sub>j</sub> &times; r<sub>ij</sub>) — jumlah nilai ternormalisasi &times; bobot tiap kriteria<br>
+        4. <strong>Ranking:</strong> Warga diurutkan dari v<sub>i</sub> tertinggi &rarr; diprioritaskan sebagai penerima bansos<br><br>
+        <strong>Threshold status:</strong>
+        Skor &ge; 0,75 = <span style="background:#FAEEDA;color:#854F0B;padding:1px 6px;border-radius:4px;font-weight:700">Prioritas</span>
+        &nbsp;|&nbsp; 0,50–0,74 = <span style="background:#e1f5ee;color:#0f6e56;padding:1px 6px;border-radius:4px;font-weight:700">Layak</span>
+        &nbsp;|&nbsp; &lt;0,50 = <span style="background:#FCEBEB;color:#A32D2D;padding:1px 6px;border-radius:4px;font-weight:700">Tidak Layak</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================================
+// STATE: KRITERIA (dapat diubah user)
+// =====================================================================
+const DEFAULT_KRITERIA = [
+  { key:'ph', label:'Penghasilan', tipe:'cost',    bobot:0.25, skala:5,
+    opts:['','< Rp 1.000.000','Rp 1.000.001 - 2.000.000','Rp 2.000.001 - 3.000.000','Rp 3.000.001 - 4.000.000','> Rp 4.000.000'] },
+  { key:'tg', label:'Tanggungan Keluarga', tipe:'benefit', bobot:0.20, skala:5,
+    opts:['','1 orang','2 orang','3 - 4 orang','5 - 6 orang','≥ 7 orang'] },
+  { key:'kr', label:'Kondisi Rumah', tipe:'benefit', bobot:0.15, skala:5,
+    opts:['','Sangat Layak','Layak','Cukup','Tidak Layak','Sangat Tidak Layak'] },
+  { key:'pk', label:'Pekerjaan',  tipe:'benefit', bobot:0.10, skala:5,
+    opts:['','Pekerjaan Tetap','Pekerjaan Kontrak','Wiraswasta','Buruh','Tidak Bekerja'] },
+  { key:'as', label:'Aset',       tipe:'cost',    bobot:0.10, skala:5,
+    opts:['','Sangat Sedikit','Sedikit','Cukup','Banyak','Sangat Banyak'] },
+  { key:'tp', label:'Tempat Tinggal', tipe:'benefit', bobot:0.08, skala:2,
+    opts:['','Milik Sendiri','Kontrak / Sewa'] },
+  { key:'kn', label:'Kendaraan (Motor)', tipe:'cost', bobot:0.07, skala:2,
+    opts:['','Tidak Punya','Punya'] },
+  { key:'kw', label:'Status Perkawinan', tipe:'benefit', bobot:0.05, skala:2,
+    opts:['','Kawin','Belum Kawin'] }
+];
+
+let KRITERIA = loadKriteria();
+let db, allData=[], charts={};
+
+function loadKriteria(){
+  try {
+    const s = localStorage.getItem('saw_kriteria_v4');
+    if(s) return JSON.parse(s);
+  } catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_KRITERIA));
+}
+function saveKriteriaLS(){
+  localStorage.setItem('saw_kriteria_v4', JSON.stringify(KRITERIA));
+}
+
+// =====================================================================
+// INDEXEDDB
+// =====================================================================
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('BansosDB_v4',1);
+    r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('warga'))d.createObjectStore('warga',{keyPath:'id',autoIncrement:true})};
+    r.onsuccess=e=>{db=e.target.result;res(db)};
+    r.onerror=e=>rej(e);
+  });
+}
+function getAll(){ return new Promise(r=>{const q=db.transaction('warga','readonly').objectStore('warga').getAll();q.onsuccess=e=>r(e.target.result)}) }
+function put(o){ return new Promise(r=>{const tx=db.transaction('warga','readwrite');tx.objectStore('warga').put(o).onsuccess=e=>r(e.target.result)}) }
+function del(id){ return new Promise(r=>{const tx=db.transaction('warga','readwrite');tx.objectStore('warga').delete(id);tx.oncomplete=r}) }
+function clearDB(){ return new Promise(r=>{const tx=db.transaction('warga','readwrite');tx.objectStore('warga').clear();tx.oncomplete=r}) }
+
+// =====================================================================
+// SAW CALCULATION
+// =====================================================================
+function saw(data){
+  if(!data.length)return[];
+  const mx={}, mn={};
+  KRITERIA.forEach(k=>{
+    const vals=data.map(d=>+d[k.key]||0).filter(v=>v>0);
+    mx[k.key]=vals.length?Math.max(...vals):1;
+    mn[k.key]=vals.length?Math.min(...vals):1;
+  });
+  return data.map(d=>{
+    let sc=0; const detail={};
+    KRITERIA.forEach(k=>{
+      const xij=+d[k.key]||0;
+      let rij=0;
+      if(xij>0){
+        rij = k.tipe==='benefit' ? xij/mx[k.key] : mn[k.key]/xij;
+      }
+      const ws=rij*k.bobot;
+      detail[k.key]={rij:Math.round(rij*10000)/10000, ws:Math.round(ws*10000)/10000, xij};
+      sc+=ws;
+    });
+    sc=Math.round(sc*10000)/10000;
+    let st='Tidak Layak';
+    if(sc>=.75)st='Prioritas';
+    else if(sc>=.50)st='Layak';
+    return{...d,score:sc,status:st,detail};
+  }).sort((a,b)=>b.score-a.score);
+}
+
+// =====================================================================
+// TAB SWITCH
+// =====================================================================
+function sw(tab){
+  const tabs=['input','import','hasil','hitung','dashboard','bobot'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(tab==='hasil') renderHasil();
+  if(tab==='hitung') renderHitung();
+  if(tab==='dashboard') renderDash();
+  if(tab==='bobot') renderBobot();
+}
+
+function showA(msg,type,el='alrt'){
+  const e=document.getElementById(el);
+  e.className='alrt alrt-'+(type||'ok');
+  e.textContent=msg;
+  e.style.display='block';
+  clearTimeout(e._t);
+  e._t=setTimeout(()=>e.style.display='none',5000);
+}
+
+// =====================================================================
+// FORM INPUT
+// =====================================================================
+function buildFormFields(){
+  const wrap=document.getElementById('form-kriteria-fields');
+  wrap.innerHTML=KRITERIA.map(k=>`
+    <div class="fld">
+      <label>${k.label} <span class="${k.tipe==='cost'?'badge-cost':'badge-ben'}">${k.tipe.toUpperCase()}</span></label>
+      <select id="f-${k.key}">
+        ${k.opts ? k.opts.map((o,i)=>`<option value="${i===0?'':i}">${o||'-- Pilih --'}</option>`).join('') 
+          : `<option value="">-- Pilih --</option>${Array.from({length:k.skala},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('')}`}
+      </select>
+    </div>`).join('');
+}
+
+function buildTblHeader(){
+  const tr=document.getElementById('th-raw');
+  tr.innerHTML=`<th>#</th><th>Nama</th><th>RT/RW</th><th>NIK</th><th>${KRITERIA[0]?.label||'C1'}</th><th>${KRITERIA[1]?.label||'C2'}</th><th>${KRITERIA[2]?.label||'C3'}</th><th>Aksi</th>`;
+}
+
+function resetF(){
+  ['nm','rt','rw','nik'].forEach(k=>{const e=document.getElementById('f-'+k);if(e)e.value='';});
+  KRITERIA.forEach(k=>{const e=document.getElementById('f-'+k.key);if(e)e.value='';});
+  document.getElementById('f-eid').value='';
+  document.getElementById('fml').textContent='';
+}
+
+async function save(){
+  const nm=document.getElementById('f-nm').value.trim();
+  if(!nm){showA('Nama wajib diisi!','inf');return}
+  const o={nama:nm, rt:document.getElementById('f-rt').value.trim(), rw:document.getElementById('f-rw').value.trim(), nik:document.getElementById('f-nik').value.trim(), ts:new Date().toISOString()};
+  KRITERIA.forEach(k=>{o[k.key]=document.getElementById('f-'+k.key)?.value||'';});
+  const eid=document.getElementById('f-eid').value;
+  if(eid)o.id=parseInt(eid);
+  await put(o);allData=await getAll();renderTbl();resetF();
+  showA(eid?'Data berhasil diperbarui!':'Data berhasil disimpan!');
+}
+
+async function editR(id){
+  const r=allData.find(d=>d.id===id);if(!r)return;
+  document.getElementById('f-nm').value=r.nama||'';
+  document.getElementById('f-rt').value=r.rt||'';
+  document.getElementById('f-rw').value=r.rw||'';
+  document.getElementById('f-nik').value=r.nik||'';
+  KRITERIA.forEach(k=>{const e=document.getElementById('f-'+k.key);if(e)e.value=r[k.key]||'';});
+  document.getElementById('f-eid').value=id;
+  document.getElementById('fml').textContent='Mode edit — ID '+id;
+  sw('input');window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function delR(id){
+  if(!confirm('Hapus data ini?'))return;
+  await del(id);allData=await getAll();renderTbl();showA('Data dihapus.');
+}
+
+async function clearAll(){
+  if(!confirm('HAPUS SEMUA DATA? Tindakan ini tidak bisa dibatalkan!'))return;
+  await clearDB();allData=[];renderTbl();
+  showA('Semua data telah dihapus.','err','alrt-imp');
+}
+
+function renderTbl(){
+  const q=(document.getElementById('srch').value||'').toLowerCase();
+  const data=allData.filter(d=>!q||d.nama.toLowerCase().includes(q));
+  const tb=document.getElementById('tb-raw');
+  const k0=KRITERIA[0], k1=KRITERIA[1], k2=KRITERIA[2];
+  const getLabel=(k,v)=>k?.opts?.[+v]||v||'-';
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" class="empty">Belum ada data. Gunakan form di atas atau import Excel.</td></tr>';return}
+  tb.innerHTML=data.map((d,i)=>`<tr>
+    <td style="color:#888;font-size:11px">${i+1}</td>
+    <td><strong>${d.nama}</strong></td>
+    <td>RT ${d.rt||'-'}/RW ${d.rw||'-'}</td>
+    <td style="font-size:11px;color:#888">${d.nik||'-'}</td>
+    <td>${getLabel(k0,d[k0?.key])}</td>
+    <td>${getLabel(k1,d[k1?.key])}</td>
+    <td>${getLabel(k2,d[k2?.key])}</td>
+    <td style="display:flex;gap:5px;flex-wrap:wrap">
+      <button class="btn btn-o" style="font-size:11px;padding:4px 10px" onclick="editR(${d.id})">Edit</button>
+      <button class="btn btn-r2" onclick="delR(${d.id})">Hapus</button>
+    </td>
+  </tr>`).join('');
+}
+
+// =====================================================================
+// HASIL & RANKING
+// =====================================================================
+function renderHasil(){
+  const res=saw(allData);
+  const fst=document.getElementById('fl-st').value;
+  const frt=(document.getElementById('fl-rt').value||'').trim();
+  let fil=res;
+  if(fst)fil=fil.filter(r=>r.status===fst);
+  if(frt)fil=fil.filter(r=>r.rt===frt);
+  const pr=res.filter(r=>r.status==='Prioritas').length;
+  const ly=res.filter(r=>r.status==='Layak').length;
+  const tl=res.filter(r=>r.status==='Tidak Layak').length;
+  document.getElementById('sg').innerHTML=`
+    <div class="sc"><div class="lb">Total Warga</div><div class="vl">${res.length}</div><div class="sb">terdaftar</div></div>
+    <div class="sc"><div class="lb">Prioritas</div><div class="vl" style="color:#854F0B">${pr}</div><div class="sb">skor ≥ 0,75</div></div>
+    <div class="sc"><div class="lb">Layak</div><div class="vl" style="color:#0f6e56">${ly}</div><div class="sb">skor 0,50–0,74</div></div>
+    <div class="sc"><div class="lb">Tidak Layak</div><div class="vl" style="color:#A32D2D">${tl}</div><div class="sb">skor &lt; 0,50</div></div>`;
+  const tb=document.getElementById('tb-hasil');
+  if(!fil.length){tb.innerHTML='<tr><td colspan="7" class="empty">Tidak ada data yang sesuai filter.</td></tr>';return}
+  const mxsc=Math.max(...fil.map(r=>r.score))||1;
+  tb.innerHTML=fil.map((r,i)=>{
+    const rk=i+1;
+    const bw=Math.round((r.score/mxsc)*70);
+    const bc=r.status==='Prioritas'?'bdg-pr':r.status==='Layak'?'bdg-ly':'bdg-tl';
+    const rc=rk<=3?'rn top':'rn';
+    const det=KRITERIA.map(k=>`${k.label}: ${((r.detail[k.key]?.ws||0)*100).toFixed(1)}%`).join(' | ');
+    return`<tr>
+      <td><span class="${rc}">${rk}</span></td>
+      <td><strong>${r.nama}</strong></td>
+      <td>RT ${r.rt||'-'}/RW ${r.rw||'-'}</td>
+      <td style="font-size:11px;color:#888">${r.nik||'-'}</td>
+      <td><div class="sbw"><span style="font-size:13px;font-weight:700;min-width:50px">${r.score.toFixed(4)}</span><div class="sbar" style="width:${bw}px"></div></div></td>
+      <td><span class="bdg ${bc}">${r.status}</span></td>
+      <td style="font-size:10px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${det}">${det}</td>
+    </tr>`;
+  }).join('');
+}
+
+// =====================================================================
+// LANGKAH SAW
+// =====================================================================
+function renderHitung(){
+  const el=document.getElementById('step-content');
+  if(!allData.length){
+    el.innerHTML='<div class="empty">Belum ada data. Tambahkan warga terlebih dahulu.</div>';return;
+  }
+  const data=allData;
+  const ks=KRITERIA;
+
+  // Hitung max/min per kriteria
+  const mx={}, mn={};
+  ks.forEach(k=>{
+    const vals=data.map(d=>+d[k.key]||0).filter(v=>v>0);
+    mx[k.key]=vals.length?Math.max(...vals):1;
+    mn[k.key]=vals.length?Math.min(...vals):1;
+  });
+
+  // Normalisasi
+  const normed=data.map(d=>{
+    const r={};
+    ks.forEach(k=>{
+      const xij=+d[k.key]||0;
+      r[k.key]=xij>0?(k.tipe==='benefit'?xij/mx[k.key]:mn[k.key]/xij):0;
+    });
+    return{...d, r};
+  });
+
+  // Skor
+  const scored=normed.map(d=>{
+    let sc=0;
+    ks.forEach(k=>{ sc+=d.r[k.key]*k.bobot; });
+    return{...d, score:Math.round(sc*10000)/10000};
+  });
+  const ranked=[...scored].sort((a,b)=>b.score-a.score);
+
+  // --- STEP 1: Matriks Keputusan ---
+  const step1=`
+  <div class="step-box">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span>📋 Langkah 1 — Matriks Keputusan (Data Awal)</span><span>▼</span>
+    </div>
+    <div class="step-body open">
+      <div class="info-box">Nilai asli setiap warga per kriteria (skala Likert). Ini adalah matriks X sebelum dinormalisasi.</div>
+      <div style="overflow-x:auto"><table class="step-table">
+        <thead><tr><th>Nama</th>${ks.map(k=>`<th>${k.label}<br><small style="font-weight:400;opacity:.8">${k.tipe.toUpperCase()}&nbsp;w=${k.bobot}</small></th>`).join('')}</tr></thead>
+        <tbody>
+          ${data.map(d=>`<tr><td class="nm-col">${d.nama}</td>${ks.map(k=>`<td>${d[k.key]||'–'}</td>`).join('')}</tr>`).join('')}
+          <tr class="max-row"><td class="nm-col">MAX</td>${ks.map(k=>`<td>${mx[k.key]}</td>`).join('')}</tr>
+          <tr class="min-row"><td class="nm-col">MIN</td>${ks.map(k=>`<td>${mn[k.key]}</td>`).join('')}</tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>`;
+
+  // --- STEP 2: Normalisasi ---
+  const step2=`
+  <div class="step-box">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span>📐 Langkah 2 — Normalisasi Matriks R</span><span>▼</span>
+    </div>
+    <div class="step-body open">
+      <div class="formula-box">
+        <span class="hl-ben">BENEFIT</span>: r<sub>ij</sub> = x<sub>ij</sub> / MAX(x<sub>j</sub>)&nbsp;&nbsp;&nbsp;
+        <span class="hl-cost">COST</span>: r<sub>ij</sub> = MIN(x<sub>j</sub>) / x<sub>ij</sub>
+      </div>
+      <div class="info-box">
+        ${ks.map(k=>`<strong>${k.label}</strong> (${k.tipe==='cost'?`<span style="color:#a32d2d">COST</span>: MIN=${mn[k.key]}/x`:`<span style="color:#1e4d8c">BENEFIT</span>: x/MAX=${mx[k.key]}`})`).join('&nbsp;&nbsp;|&nbsp;&nbsp;')}
+      </div>
+      <div style="overflow-x:auto"><table class="step-table">
+        <thead><tr><th>Nama</th>${ks.map(k=>`<th>${k.label}<br><small style="font-weight:400;opacity:.8">${k.tipe.toUpperCase()}</small></th>`).join('')}</tr></thead>
+        <tbody>
+          ${normed.map(d=>`<tr><td class="nm-col">${d.nama}</td>${ks.map(k=>`<td>${d[k.key]?d.r[k.key].toFixed(4):'–'}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  </div>`;
+
+  // --- STEP 3: Pembobotan ---
+  const step3=`
+  <div class="step-box">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span>⚖️ Langkah 3 — Pembobotan (r × w)</span><span>▼</span>
+    </div>
+    <div class="step-body open">
+      <div class="formula-box">v<sub>i</sub> = Σ (w<sub>j</sub> × r<sub>ij</sub>)</div>
+      <div class="info-box">
+        Bobot per kriteria: ${ks.map(k=>`<strong>${k.label}</strong> = ${k.bobot}`).join(' | ')}
+      </div>
+      <div style="overflow-x:auto"><table class="step-table">
+        <thead><tr><th>Nama</th>${ks.map(k=>`<th>${k.label}<br><small style="font-weight:400;opacity:.8">×${k.bobot}</small></th>`).join('')}<th style="background:#854F0B">Skor v<sub>i</sub></th></tr></thead>
+        <tbody>
+          ${scored.map(d=>`<tr><td class="nm-col">${d.nama}</td>${ks.map(k=>`<td>${d[k.key]?((d.r[k.key]*k.bobot).toFixed(4)):'–'}</td>`).join('')}<td style="font-weight:700;background:#FAEEDA">${d.score.toFixed(4)}</td></tr>`).join('')}
+          <tr class="max-row"><td class="nm-col">Bobot</td>${ks.map(k=>`<td style="font-weight:700">${k.bobot}</td>`).join('')}<td style="background:#FAEEDA;font-weight:700">${ks.reduce((s,k)=>s+k.bobot,0).toFixed(2)}</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>`;
+
+  // --- STEP 4: Peringkat ---
+  const step4=`
+  <div class="step-box">
+    <div class="step-header" onclick="toggleStep(this)">
+      <span>🏆 Langkah 4 — Peringkat Akhir</span><span>▼</span>
+    </div>
+    <div class="step-body open">
+      <div class="info-box">Warga diurutkan berdasarkan skor v<sub>i</sub> dari tertinggi ke terendah. Skor tertinggi = prioritas penerima bansos.</div>
+      <div style="overflow-x:auto"><table class="step-table">
+        <thead><tr><th>Peringkat</th><th>Nama</th><th>RT/RW</th><th>Skor v<sub>i</sub></th><th>Status</th></tr></thead>
+        <tbody>
+          ${ranked.map((d,i)=>{
+            const st=d.score>=.75?'Prioritas':d.score>=.5?'Layak':'Tidak Layak';
+            const bc=st==='Prioritas'?'bdg-pr':st==='Layak'?'bdg-ly':'bdg-tl';
+            return`<tr><td><span class="${i<3?'rn top':'rn'}">${i+1}</span></td><td class="nm-col">${d.nama}</td><td>RT ${d.rt||'-'}/RW ${d.rw||'-'}</td><td style="font-weight:700">${d.score.toFixed(4)}</td><td><span class="bdg ${bc}">${st}</span></td></tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+    </div>
+  </div>`;
+
+  el.innerHTML=step1+step2+step3+step4;
+}
+
+function toggleStep(hdr){
+  const body=hdr.nextElementSibling;
+  body.classList.toggle('open');
+  hdr.querySelector('span:last-child').textContent=body.classList.contains('open')?'▼':'▶';
+}
+
+// =====================================================================
+// BOBOT & KRITERIA EDITOR
+// =====================================================================
+function renderBobot(){
+  // Render skala input helper
+  const nkSk=document.getElementById('nk-sk');
+  if(nkSk) nkSk.oninput=buildLabelInputs;
+  buildLabelInputs();
+
+  const rows=document.getElementById('bobot-rows');
+  rows.innerHTML=KRITERIA.map((k,i)=>`
+    <div class="bobot-row" id="brow-${i}">
+      <span style="font-weight:600">${k.label}</span>
+      <input type="number" step="0.01" min="0.01" max="1" value="${k.bobot}" id="bw-${i}" oninput="updateBobotTotal()">
+      <select id="bt-${i}">
+        <option value="benefit" ${k.tipe==='benefit'?'selected':''}>BENEFIT</option>
+        <option value="cost" ${k.tipe==='cost'?'selected':''}>COST</option>
+      </select>
+      <span style="font-size:12px;color:#666">${k.skala} skala</span>
+      <button class="btn btn-r2 btn-sm" onclick="removeKriteria(${i})">Hapus</button>
+    </div>`).join('');
+  updateBobotTotal();
+}
+
+function updateBobotTotal(){
+  const total=KRITERIA.reduce((s,_,i)=>{
+    const v=parseFloat(document.getElementById('bw-'+i)?.value||0);
+    return s+(isNaN(v)?0:v);
+  },0);
+  const el=document.getElementById('tot-bobot');
+  if(el){
+    el.textContent=total.toFixed(4);
+    el.className='tot-val '+(Math.abs(total-1)<0.001?'tot-ok':'tot-err');
+  }
+  document.getElementById('tot-bobot-disp').textContent=`Total: ${total.toFixed(4)}`;
+}
+
+function saveBobot(){
+  let total=0;
+  KRITERIA.forEach((_,i)=>{
+    const bw=parseFloat(document.getElementById('bw-'+i)?.value||0);
+    const tp=document.getElementById('bt-'+i)?.value||'benefit';
+    KRITERIA[i].bobot=isNaN(bw)?KRITERIA[i].bobot:bw;
+    KRITERIA[i].tipe=tp;
+    total+=KRITERIA[i].bobot;
+  });
+  if(Math.abs(total-1)>0.001){
+    showA(`Total bobot = ${total.toFixed(4)}, harus = 1.00. Gunakan tombol Normalisasi atau sesuaikan manual.`,'err','alrt-bobot');
+    return;
+  }
+  saveKriteriaLS();
+  buildFormFields();buildTblHeader();
+  showA('Bobot & tipe berhasil disimpan!','ok','alrt-bobot');
+  renderBobot();
+}
+
+function autoNorm(){
+  let total=0;
+  KRITERIA.forEach((_,i)=>{
+    const bw=parseFloat(document.getElementById('bw-'+i)?.value||0);
+    KRITERIA[i].bobot=isNaN(bw)?KRITERIA[i].bobot:bw;
+    total+=KRITERIA[i].bobot;
+  });
+  if(total<=0){showA('Total bobot 0, tidak bisa dinormalisasi.','err','alrt-bobot');return;}
+  KRITERIA.forEach((_,i)=>{ KRITERIA[i].bobot=Math.round((KRITERIA[i].bobot/total)*10000)/10000; });
+  // koreksi rounding
+  const tot2=KRITERIA.reduce((s,k)=>s+k.bobot,0);
+  KRITERIA[0].bobot=Math.round((KRITERIA[0].bobot+(1-tot2))*10000)/10000;
+  saveKriteriaLS();
+  buildFormFields();buildTblHeader();
+  renderBobot();
+  showA('Bobot berhasil dinormalisasi ke 1.00!','ok','alrt-bobot');
+}
+
+function removeKriteria(i){
+  if(KRITERIA.length<=2){showA('Minimal 2 kriteria.','err','alrt-bobot');return;}
+  if(!confirm(`Hapus kriteria "${KRITERIA[i].label}"?`))return;
+  KRITERIA.splice(i,1);
+  saveKriteriaLS();
+  buildFormFields();buildTblHeader();renderBobot();
+  showA('Kriteria dihapus.','ok','alrt-bobot');
+}
+
+function buildLabelInputs(){
+  const sk=parseInt(document.getElementById('nk-sk')?.value||5);
+  const wrap=document.getElementById('nk-labels-wrap');
+  if(!wrap)return;
+  if(isNaN(sk)||sk<2){wrap.innerHTML='';return;}
+  wrap.innerHTML=`<p style="font-size:11px;color:#666;margin-bottom:6px">Label tiap skala (opsional):</p>
+  <div style="display:flex;gap:6px;flex-wrap:wrap">
+    ${Array.from({length:sk},(_,i)=>`<input class="nk-lbl" data-idx="${i+1}" placeholder="Skala ${i+1}" style="width:110px;padding:6px 8px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:12px">`).join('')}
+  </div>`;
+}
+
+function addKriteria(){
+  const nm=(document.getElementById('nk-nm').value||'').trim();
+  const tp=document.getElementById('nk-tp').value;
+  const bw=parseFloat(document.getElementById('nk-bw').value||0);
+  const sk=parseInt(document.getElementById('nk-sk').value||5);
+  if(!nm){showA('Nama kriteria wajib diisi.','err','alrt-bobot');return;}
+  if(isNaN(bw)||bw<=0){showA('Bobot harus > 0.','err','alrt-bobot');return;}
+  if(isNaN(sk)||sk<2||sk>10){showA('Jumlah skala 2–10.','err','alrt-bobot');return;}
+  const key='c_'+Date.now();
+  const lblEls=document.querySelectorAll('.nk-lbl');
+  const opts=[''];
+  for(let i=1;i<=sk;i++){
+    const lbl=lblEls[i-1]?.value.trim()||`Skala ${i}`;
+    opts.push(lbl);
+  }
+  KRITERIA.push({key, label:nm, tipe:tp, bobot:bw, skala:sk, opts});
+  saveKriteriaLS();
+  buildFormFields();buildTblHeader();renderBobot();
+  document.getElementById('nk-nm').value='';
+  document.getElementById('nk-bw').value='';
+  document.getElementById('nk-sk').value='5';
+  buildLabelInputs();
+  showA(`Kriteria "${nm}" berhasil ditambahkan! Jangan lupa normalisasi bobot jika total bukan 1.00`,'ok','alrt-bobot');
+}
+
+// =====================================================================
+// DASHBOARD
+// =====================================================================
+function renderDash(){
+  const res=saw(allData);
+  const pr=res.filter(r=>r.status==='Prioritas').length;
+  const ly=res.filter(r=>r.status==='Layak').length;
+  const tl=res.filter(r=>r.status==='Tidak Layak').length;
+  document.getElementById('sg2').innerHTML=`
+    <div class="sc"><div class="lb">Total Warga</div><div class="vl">${res.length}</div></div>
+    <div class="sc"><div class="lb">Prioritas</div><div class="vl" style="color:#854F0B">${pr}</div></div>
+    <div class="sc"><div class="lb">Layak</div><div class="vl" style="color:#0f6e56">${ly}</div></div>
+    <div class="sc"><div class="lb">Tidak Layak</div><div class="vl" style="color:#A32D2D">${tl}</div></div>`;
+  ['pie','bar','rt','skor'].forEach(k=>{if(charts[k]){charts[k].destroy();charts[k]=null}});
+  if(!res.length)return;
+  charts.pie=new Chart(document.getElementById('ch-pie').getContext('2d'),{type:'doughnut',data:{labels:['Prioritas','Layak','Tidak Layak'],datasets:[{data:[pr,ly,tl],backgroundColor:['#FAC775','#5DCAA5','#F09595'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},padding:14,boxWidth:12}}}}});
+  const top10=res.slice(0,10);
+  charts.bar=new Chart(document.getElementById('ch-bar').getContext('2d'),{type:'bar',data:{labels:top10.map(r=>r.nama.split(' ')[0]),datasets:[{label:'Skor SAW',data:top10.map(r=>parseFloat(r.score.toFixed(4))),backgroundColor:top10.map(r=>r.status==='Prioritas'?'#FAC775':r.status==='Layak'?'#5DCAA5':'#F09595'),borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:0,max:1,ticks:{font:{size:11}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  const rts=[...new Set(res.map(r=>r.rt||'?'))].sort();
+  charts.rt=new Chart(document.getElementById('ch-rt').getContext('2d'),{type:'bar',data:{labels:rts.map(r=>'RT '+r),datasets:[{label:'Prioritas',data:rts.map(rt=>res.filter(r=>r.rt===rt&&r.status==='Prioritas').length),backgroundColor:'#FAC775',borderRadius:3},{label:'Layak',data:rts.map(rt=>res.filter(r=>r.rt===rt&&r.status==='Layak').length),backgroundColor:'#5DCAA5',borderRadius:3},{label:'Tidak Layak',data:rts.map(rt=>res.filter(r=>r.rt===rt&&r.status==='Tidak Layak').length),backgroundColor:'#F09595',borderRadius:3}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12,boxWidth:12}}},scales:{x:{stacked:true,ticks:{font:{size:11}},grid:{display:false}},y:{stacked:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'#f0f0f0'}}}}});
+  const buckets=Array(10).fill(0);
+  res.forEach(r=>{const b=Math.min(9,Math.floor(r.score*10));buckets[b]++;});
+  charts.skor=new Chart(document.getElementById('ch-skor').getContext('2d'),{type:'bar',data:{labels:['0.0','0.1','0.2','0.3','0.4','0.5','0.6','0.7','0.8','0.9'],datasets:[{label:'Jumlah warga',data:buckets,backgroundColor:buckets.map((_,i)=>i>=7?'#FAC775':i>=5?'#5DCAA5':'#F09595'),borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'Rentang skor SAW',font:{size:11}},ticks:{font:{size:11}},grid:{display:false}},y:{ticks:{stepSize:1,font:{size:11}},grid:{color:'#f0f0f0'}}}}});
+}
+
+// =====================================================================
+// EXPORT
+// =====================================================================
+function expRaw(){
+  if(!allData.length){alert('Tidak ada data.');return;}
+  const rows=allData.map(d=>{
+    const o={'Nama':d.nama,'RT':d.rt,'RW':d.rw,'NIK':d.nik};
+    KRITERIA.forEach(k=>{ o[k.label]=d[k.key]; });
+    return o;
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Data Warga');XLSX.writeFile(wb,'data_warga_bansos.xlsx');
+}
+
+function expHasil(){
+  const res=saw(allData);
+  if(!res.length){alert('Tidak ada data.');return;}
+  const rows=res.map((r,i)=>{
+    const o={'Peringkat':i+1,'Nama':r.nama,'RT':r.rt,'RW':r.rw,'NIK':r.nik,'Skor SAW':parseFloat(r.score.toFixed(4)),'Status':r.status};
+    KRITERIA.forEach(k=>{ o[k.label+' ('+Math.round(k.bobot*100)+'%)']=parseFloat(((r.detail[k.key]?.ws||0)*100).toFixed(2)); });
+    return o;
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Hasil SAW');XLSX.writeFile(wb,'hasil_seleksi_bansos.xlsx');
+}
+
+function dlTemplate(){
+  const ex1={Nama:'Budi Santoso (hapus baris ini)',RT:'01',RW:'003',NIK:'3271012345678901'};
+  const ex2={Nama:'Siti Aminah (hapus baris ini)',RT:'01',RW:'003',NIK:'3271012345678902'};
+  const ex3={Nama:'Nama Warga 3',RT:'02',RW:'003',NIK:''};
+  KRITERIA.forEach(k=>{
+    ex1[k.label]=k.opts?.[2]||1;
+    ex2[k.label]=k.opts?.[k.skala]||k.skala;
+    ex3[k.label]='';
+  });
+  const ws=XLSX.utils.json_to_sheet([ex1,ex2,ex3]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Template Bansos');
+  XLSX.writeFile(wb,'template_bansos.xlsx');
+}
+
+// =====================================================================
+// IMPORT
+// =====================================================================
+function normalizeStr(s){ return String(s||'').trim().toLowerCase(); }
+
+function resolveVal(raw, k){
+  if(!raw && raw!==0) return '';
+  const s=normalizeStr(raw);
+  if(/^[1-9][0-9]*$/.test(String(raw).trim())){
+    const v=parseInt(raw);
+    return (v>=1&&v<=k.skala)?String(v):'';
+  }
+  if(k.opts){
+    for(let i=1;i<k.opts.length;i++){
+      if(normalizeStr(k.opts[i])===s) return String(i);
+    }
+  }
+  return '';
+}
+
+async function impFile(inp){
+  const f=inp.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=async e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws);
+      if(!rows.length){showA('File kosong.','err','alrt-imp');return;}
+      let cnt=0,skip=0;
+      for(const r of rows){
+        const nm=String(r['Nama']||'').trim();
+        if(!nm||nm.includes('(hapus baris ini)')||nm.includes('(contoh)'))continue;
+        const vals=KRITERIA.map(k=>resolveVal(r[k.label],k));
+        if(vals.every(v=>!v)){skip++;continue;}
+        const o={nama:nm,rt:String(r['RT']||'').trim(),rw:String(r['RW']||'').trim(),nik:String(r['NIK']||'').trim(),ts:new Date().toISOString()};
+        KRITERIA.forEach((k,i)=>{ o[k.key]=vals[i]; });
+        await put(o);cnt++;
+      }
+      allData=await getAll();renderTbl();
+      showA(`Berhasil import ${cnt} data warga!${skip?' ('+skip+' baris kosong dilewati)':''}`,cnt>0?'ok':'err','alrt-imp');
+    }catch(err){showA('Gagal membaca file: '+err.message,'err','alrt-imp');}
+    inp.value='';
+  };
+  rd.readAsArrayBuffer(f);
+}
+
+function dg(e){e.preventDefault();document.getElementById('dz').classList.add('drag');}
+function dl(e){document.getElementById('dz').classList.remove('drag');}
+function dd(e){e.preventDefault();document.getElementById('dz').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)impFile({files:[f]});}
+
+// =====================================================================
+// PRINT
+// =====================================================================
+function printLap(){
+  const res=saw(allData);
+  const now=new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+  const pr=res.filter(r=>r.status==='Prioritas').length;
+  const ly=res.filter(r=>r.status==='Layak').length;
+  const tl=res.filter(r=>r.status==='Tidak Layak').length;
+  const rows=res.map((r,i)=>{
+    const bc=r.status==='Prioritas'?'#854F0B':r.status==='Layak'?'#0f6e56':'#A32D2D';
+    const bg=r.status==='Prioritas'?'#FAEEDA':r.status==='Layak'?'#e1f5ee':'#FCEBEB';
+    return`<tr><td>${i+1}</td><td>${r.nama}</td><td>RT ${r.rt||'-'}/RW ${r.rw||'-'}</td><td>${r.nik||'-'}</td><td style="font-weight:700">${r.score.toFixed(4)}</td><td><span style="background:${bg};color:${bc};padding:2px 10px;border-radius:12px;font-weight:700;font-size:11px">${r.status}</span></td></tr>`;
+  }).join('');
+  const w=window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Laporan Bansos</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:24px;color:#111}h2{font-size:18px;font-weight:700;margin-bottom:4px;color:#1e4d8c}.meta{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}.meta div{padding:8px 16px;border:1px solid #ddd;border-radius:6px;font-size:12px}table{width:100%;border-collapse:collapse}th{background:#1e4d8c;color:#fff;padding:7px 9px;text-align:left;font-size:11px}td{padding:6px 9px;border-bottom:1px solid #eee}tr:nth-child(even) td{background:#f9f9f9}.footer{margin-top:20px;font-size:11px;color:#aaa;text-align:center}@media print{button{display:none!important}}</style></head><body>
+  <h2>Laporan Seleksi Penerima Bansos</h2>
+  <p style="color:#666;font-size:11px;margin-bottom:16px">Metode SAW &bull; Dicetak: ${now}</p>
+  <div class="meta">
+    <div>Total: <strong>${res.length} warga</strong></div>
+    <div style="color:#854F0B">Prioritas: <strong>${pr}</strong></div>
+    <div style="color:#0f6e56">Layak: <strong>${ly}</strong></div>
+    <div style="color:#A32D2D">Tidak Layak: <strong>${tl}</strong></div>
+  </div>
+  <table><thead><tr><th>#</th><th>Nama</th><th>RT/RW</th><th>NIK</th><th>Skor SAW</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="footer">Sistem SAW Bansos RT/RW</div>
+  <br><button onclick="window.print()" style="padding:8px 20px;background:#1e4d8c;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">&#128438; Cetak / Simpan PDF</button>
+  </body></html>`);
+  w.document.close();w.focus();
+}
+
+// =====================================================================
+// INIT
+// =====================================================================
+(async()=>{
+  await openDB();
+  allData=await getAll();
+  buildFormFields();
+  buildTblHeader();
+  buildLabelInputs();
+  renderTbl();
+})();
+</script>
+</body>
+</html>
